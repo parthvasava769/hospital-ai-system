@@ -1,0 +1,1 @@
+{"sessionId": "c3864d", "runId": "pre-fix", "hypothesisId": "H1", "location": "frontend/app.py:394", "message": "Patient menu selection captured", "data": {"selected": "Dashboard", "has_page_in_globals": false, "has_page_in_locals": false}, "timestamp": 1774326631824}
