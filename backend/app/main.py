@@ -1,7 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 
-from app.database import engine
+from app.database import engine, get_db
+from app.database import Base, engine
 from app.models import user, appointment
 from app.routes.appointments import router as appointments_router
 from app.models import doctor_schedule
@@ -14,6 +16,8 @@ from app.routes.ai_assistance import router as ai_router
 from app.services.agent_registry import register_agents
 from app.routes import auth
 from app.routes.users import router as users_router
+from app.routes import billing
+from app.routes import admin
 
 app = FastAPI(
     title="Multi-Agent Hospital Workflow Automation System",
@@ -41,6 +45,47 @@ def health_check():
         "message": "Hospital Workflow Automation API is running"
     }
 
+# Admin
+@app.get("/admin/users")
+def get_users(db: Session = Depends(get_db)):
+    # region agent log
+    try:
+        import json, time
+        with open(
+            r"C:\Users\parth\OneDrive\Desktop\hospital-ai-system\debug-c3864d.log",
+            "a",
+            encoding="utf-8",
+        ) as _f:
+            _f.write(
+                json.dumps(
+                    {
+                        "sessionId": "c3864d",
+                        "runId": "pre-fix",
+                        "hypothesisId": "A",
+                        "location": "backend/app/main.py:46",
+                        "message": "Admin get_users invoked",
+                        "data": {"has_user_module": True},
+                        "timestamp": int(time.time() * 1000),
+                    }
+                )
+                + "\n"
+            )
+    except Exception:
+        pass
+    # endregion
+
+    return db.query(user.User).all()
+
+
+@app.get("/admin/doctors")
+def get_doctors(db: Session = Depends(get_db)):
+    return db.query(user.User).filter(user.User.role == "doctor").all()
+
+
+@app.get("/admin/appointments")
+def get_appointments(db: Session = Depends(get_db)):
+    return db.query(appointment.Appointment).all()
+
 # -------------------------
 # Include Routers
 # -------------------------
@@ -51,6 +96,7 @@ app.include_router(ai_router, prefix="/ai-assistance", tags=["AI Assistance"])
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(billing_router, prefix="/billing", tags=["Billing"])
 app.include_router(users_router, prefix="/users", tags=["Users"])
+app.include_router(admin.router, prefix="/admin", tags=["Admin"])
 
 # -------------------------
 # Create Database Tables
@@ -58,5 +104,5 @@ app.include_router(users_router, prefix="/users", tags=["Users"])
 user.Base.metadata.create_all(bind=engine)
 appointment.Base.metadata.create_all(bind=engine)
 doctor_schedule.Base.metadata.create_all(bind=engine)
-billing.Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 lab_test.Base.metadata.create_all(bind=engine)

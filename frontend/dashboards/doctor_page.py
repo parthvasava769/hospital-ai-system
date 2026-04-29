@@ -1,16 +1,16 @@
 import streamlit as st
 import requests
 from api import get_lab_tests
-from datetime import datetime
+from datetime import datetime, timezone
 from api import update_appointment_status
-from datetime import datetime
+from ui_config import ICON_MAP, render_header
 
 BASE_URL = "http://127.0.0.1:8000"
 
 
 def doctor_dashboard():
 
-    st.header("🩺 Doctor Dashboard")
+    render_header("Doctor Dashboard", "doctor")
 
     doctor_id = st.session_state["user_id"]
 
@@ -20,12 +20,15 @@ def doctor_dashboard():
         params={"user_id": doctor_id}
     )
 
-    st.markdown('<div class="section-title">📅 My Appointments</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="section-title"><i class="bi bi-{ICON_MAP["appointments"]}"></i> My Appointments</div>',
+        unsafe_allow_html=True,
+    )
 
     col1, col2 = st.columns(2)
 
     with col1:
-        search = st.text_input("🔍 Search Patient ID")
+        search = st.text_input("Search Patient ID")
 
     with col2:
         filter_status = st.selectbox(
@@ -37,17 +40,36 @@ def doctor_dashboard():
 
         appointments = res.json()
 
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
+
+        def safe_parse(dt):
+            try:
+                return datetime.fromisoformat(dt)
+            except:
+                return None
 
         appointments = [
             a for a in appointments
-            if datetime.fromisoformat(a["appointment_date"]) >= now
+            if safe_parse(a["appointment_date"])
         ]
 
         appointments = sorted(
             appointments,
-            key=lambda a: datetime.fromisoformat(a["appointment_date"])
+            key=lambda a: safe_parse(a["appointment_date"])
         )
+
+        today = datetime.now().date()
+
+        appointments = [
+            a for a in appointments
+            if safe_parse(a["appointment_date"])
+            and safe_parse(a["appointment_date"]).date() >= today
+        ]
+
+        appointments = [
+            a for a in appointments
+            if safe_parse(a["appointment_date"]) and 2020 <= safe_parse(a["appointment_date"]).year <= 2030
+        ]       
         # Apply filters
         if search:
             appointments = [a for a in appointments if search in str(a["patient_id"])]
@@ -63,29 +85,32 @@ def doctor_dashboard():
             ]
 
         if appointments:
-            st.markdown('<div class="section-title">🩺 Doctor Dashboard</div>', unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="section-title"><i class="bi bi-{ICON_MAP["doctor"]}"></i> Doctor Dashboard</div>',
+                unsafe_allow_html=True,
+            )
 
             for a in appointments:
 
                  # highlight first (nearest) appointment
                 if a == appointments[0]:
-                    st.markdown("### ⏰ Next Appointment")
+                    st.markdown("### Next Appointment")
 
                 status = a.get("status", "Pending")
 
                 # Format date nicely
                 dt = datetime.fromisoformat(a["appointment_date"])
-                formatted_date = dt.strftime("%d %B %Y | %I:%M %p")
+                formatted_date = dt.strftime("%d %b %Y • %I:%M %p")
 
                 # Card UI
                 status_class = f"status-{status.lower()}"
 
                 st.markdown(f"""
                 <div class="card">
-                    <h4>🩺 Appointment #{a['id']}</h4>
-                    <p><b>👤 Patient ID:</b> {a['patient_id']}</p>
-                    <p><b>📅 Date:</b> {formatted_date}</p>
-                    <p><b>📝 Reason:</b> {a['reason'].capitalize()}</p>
+                    <h4><i class="bi bi-{ICON_MAP['appointments']}"></i> Appointment #{a['id']}</h4>
+                    <p><b>Patient ID:</b> {a['patient_id']}</p>
+                    <p><b>Date:</b> {formatted_date}</p>
+                    <p><b>Reason:</b> {a['reason'].capitalize()}</p>
                     <p class="{status_class}">Status: {status}</p>
                 </div>
                 """, unsafe_allow_html=True)
@@ -117,7 +142,7 @@ def doctor_dashboard():
     # LAB REPORTS SECTION
     # -------------------------------
 
-    st.subheader("🧪 Lab Reports")
+    render_header("Lab Reports", "lab")
 
     res = get_lab_tests()
 
@@ -135,7 +160,7 @@ def doctor_dashboard():
 
                 st.markdown(f"""
                 <div class="card">
-                    <h4>🧪 {t['test_name']}</h4>
+                    <h4><i class="bi bi-{ICON_MAP['lab']}"></i> {t['test_name']}</h4>
                     <p><b>Appointment ID:</b> {t['appointment_id']}</p>
                     <p><b>Patient ID:</b> {t['patient_id']}</p>
                     <p><b>Result:</b> {result_text}</p>

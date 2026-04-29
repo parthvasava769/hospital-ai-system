@@ -1,9 +1,12 @@
 import streamlit as st
 from api import create_appointment, get_doctors, get_my_appointments
 from datetime import datetime
+from datetime import time as dt_time
 from api import get_lab_tests
 from streamlit_autorefresh import st_autorefresh
 import requests
+from ui_config import ICON_MAP, render_header
+
 
 def format_datetime(dt_string):
     try:
@@ -21,7 +24,7 @@ def patient_dashboard():
     if "last_status_map" not in st.session_state:
         st.session_state["last_status_map"] = {}
 
-    st.markdown('<div class="section-title">🤖 AI Assistant</div>', unsafe_allow_html=True)
+    render_header("AI Assistant", "ai")
 
     with st.container():
 
@@ -31,11 +34,14 @@ def patient_dashboard():
         )
 
         if st.button("Run AI Assistant"):
-            res = requests.post(
-                f"{BASE_URL}/ai-assistance/command",
-                json={"command": command},
-                params={"user_id": st.session_state["user_id"]}
-            )
+            if not command:
+                st.warning("Please enter a command")
+            else:
+                res = requests.post(
+                    f"{BASE_URL}/ai-assistance/command",
+                    json={"command": command},
+                    params={"user_id": st.session_state["user_id"]}
+                )
 
             if res.status_code == 200:
                 st.success(res.json()["message"])
@@ -55,8 +61,13 @@ def patient_dashboard():
     if res.status_code == 200:
         appointments = res.json()
 
-        st.markdown('<div class="section-title">📅 My Appointments</div>', unsafe_allow_html=True)
-        show_appointments = st.toggle("📅 Show My Appointments", value=True)
+        appointments = [
+            a for a in appointments
+            if 2020 <= datetime.fromisoformat(a["appointment_date"]).year <= 2030
+        ]
+
+        render_header("My Appointments", "appointments")
+        show_appointments = st.toggle("Show My Appointments", value=True)
 
         if show_appointments:
 
@@ -75,8 +86,8 @@ def patient_dashboard():
                 print("DEBUG →", aid, prev, status)
 
                 # 🔔 Show notification only if status changed
-                if prev and prev != status:
-                    if prev is not None and prev != status:
+                if prev is not None and prev != status:
+                    if status == "Accepted":
                         st.toast(f"✅ Appointment #{aid} Accepted")
                     elif status == "Rejected":
                         st.toast(f"❌ Appointment #{aid} Rejected")
@@ -89,13 +100,14 @@ def patient_dashboard():
 
                 with col1:
                     st.markdown(f"""
-                    <div class="card">
-                        <b>🩺 Appointment #{aid}</b><br>
-                        📅 {format_datetime(a['appointment_date'])}<br>
-                        📝 {a['reason']}<br>
-                        <span class="status-{status_lower}">● {status}</span>
-                    </div>
-                    """, unsafe_allow_html=True)
+                            <div class="card">
+                                <b><i class="bi bi-{ICON_MAP['appointments']}"></i> Appointment #{aid}</b><br>
+                                <b>Date:</b> {format_datetime(a['appointment_date'])}<br>
+                                <b>Reason:</b> {a['reason']}<br>
+                                <span class="status-{status_lower}">● {status}</span>
+                            </div>
+                            """, unsafe_allow_html=True)
+                    
 
                 with col2:
                     st.markdown(" ")  # spacing
@@ -122,14 +134,34 @@ def patient_dashboard():
 
         date = st.date_input("Select Appointment Date")
 
-        time = st.time_input("Select Appointment Time")
+        if date.year > 2030 or date.year < 2020:
+            st.error("Invalid date selected")
+            st.stop()
 
-        if st.button("Book Appointment"):
+        # Generate time slots (every 15 minutes)
+        time_slots = [
+        dt_time(hour, minute)
+        for hour in range(9, 19)   # 9 AM to 6:45 PM
+        for minute in (0, 15, 30, 45)
+        ]
+
+        # Convert to readable format
+        time_labels = [t.strftime("%I:%M %p") for t in time_slots]
+
+        selected_time_label = st.selectbox(
+            "Select Appointment Time",
+            time_labels
+        )
+
+        # Convert back to time object
+        time = datetime.strptime(selected_time_label, "%I:%M %p").time()
+
+        if st.button("Book Appointment", key="book_btn"):
 
             appointment_datetime = datetime.combine(date, time).isoformat()
 
             data = {
-                "patient_id": patient_id,
+                "patient_id": st.session_state["user_id"],
                 "doctor_id": doctor_id,
                 "appointment_date": appointment_datetime,
                 "reason": reason
@@ -147,8 +179,77 @@ def patient_dashboard():
 
     else:
         st.error("Failed to load doctors")
+
     
-    st.subheader("My Lab Reports")
+    render_header("My Bills", "billing")
+
+    with st.container():
+
+        res = requests.get(f"{BASE_URL}/billing/patient/{patient_id}")
+
+        if res.status_code == 200:
+
+            bills = res.json()
+
+        # 🛑 SAFETY CHECK
+        if isinstance(bills, list):
+
+            for bill in bills:
+
+             if not isinstance(bill, dict):
+                continue  # skip bad data silently
+
+            st.markdown(f"""
+            <div class="card" style="margin-bottom:15px;">
+                <b>💳 Amount:</b> ₹{bill.get('amount', 'N/A')}<br>
+                <b>Status:</b> {bill.get('status', 'N/A')}
+            </div>
+            """, unsafe_allow_html=True)
+
+            if bill.get("status") == "pending":
+                if st.button(f"Pay ₹{bill['amount']}", key=f"pay_{bill['id']}"):
+                    st.session_state["pay_bill_id"] = bill["id"]
+        else:
+          st.error("Bills data is not a list")      
+        
+
+    # 💳 PAYMENT POPUP UI (PASTE HERE)
+    if st.session_state.get("pay_bill_id"):
+
+        render_header("Payment Gateway", "billing")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            card = st.text_input("Card Number", placeholder="1234 5678 9012 3456")
+            expiry = st.text_input("Expiry", placeholder="MM/YY")
+
+        with col2:
+            cvv = st.text_input("CVV", type="password")
+            name = st.text_input("Cardholder Name")
+
+        colA, colB = st.columns(2)
+
+        with colA:
+            if st.button("Confirm Payment"):
+                with st.spinner("Processing payment..."):
+                    import time
+                    time.sleep(1.5)
+
+                requests.put(f"{BASE_URL}/pay-bill/{st.session_state['pay_bill_id']}")
+
+                st.success("✅ Payment Successful!")
+
+                st.session_state["pay_bill_id"] = None
+                st.rerun()
+
+        with colB:
+            if st.button("Cancel"):
+                st.session_state["pay_bill_id"] = None
+                st.rerun()
+
+
+    render_header("My Lab Reports", "lab")
 
     res = get_lab_tests()
 
@@ -157,6 +258,15 @@ def patient_dashboard():
 
         for t in tests:
             if t["patient_id"] == st.session_state["user_id"]:
-                st.write(f"Test: {t['test_name']}")
-                st.write(f"Result: {t['result']}")
-                st.divider()
+
+                status = t.get("result", "Unknown")
+
+                st.markdown(f"""
+                <div class="card">
+                    <b><i class="bi bi-{ICON_MAP['lab']}"></i> {t['test_name']}</b><br>
+                    <b>Result:</b> 
+                    <span style="color:{'limegreen' if status.lower()=='positive' else '#f87171'}">
+                        {status}
+                    </span>
+                </div>
+                """, unsafe_allow_html=True)

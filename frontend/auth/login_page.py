@@ -11,7 +11,7 @@ def login_page():
         # 🏥 Logo + Title
         st.markdown("""
         <div style="text-align:center;">
-            <div style="font-size:42px;">🏥</div>
+            <div style="font-size:42px;"><i class="bi bi-hospital"></i></div>
             <div style="font-size:24px; font-weight:600;">Login Portal</div>
         </div>
         """, unsafe_allow_html=True)
@@ -20,8 +20,8 @@ def login_page():
 
         
         # 👉 Inputs OUTSIDE (important)
-        email = st.text_input("📧 Email")
-        password = st.text_input("🔒 Password", type="password")
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
 
         st.markdown("<br>", unsafe_allow_html=True)
 

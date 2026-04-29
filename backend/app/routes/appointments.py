@@ -7,6 +7,7 @@ from sqlalchemy.orm import joinedload
 
 from app.database import get_db
 from app.models.appointment import Appointment
+from app.models.billing import Billing
 from app.schemas.appointment import AppointmentCreate, AppointmentResponse
 from app.agents.appointment_agent import AppointmentAgent
 from app.services.orchestrator import WorkflowOrchestrator
@@ -50,9 +51,45 @@ def create_appointment(
     db.commit()
     db.refresh(new_appointment)
 
+    # region agent log
+    try:
+        import json, time
+        with open(r"C:\Users\parth\OneDrive\Desktop\hospital-ai-system\debug-c3864d.log", "a", encoding="utf-8") as _f:
+            _f.write(
+                json.dumps(
+                    {
+                        "sessionId": "c3864d",
+                        "runId": "pre-fix",
+                        "hypothesisId": "A",
+                        "location": "backend/app/routes/appointments.py:53",
+                        "message": "Creating Billing record",
+                        "data": {
+                            "patient_id": new_appointment.patient_id,
+                            "appointment_id": new_appointment.id,
+                        },
+                        "timestamp": int(time.time() * 1000),
+                    }
+                )
+                + "\n"
+            )
+    except Exception:
+        pass
+    # endregion
+
+    bill = Billing(
+        patient_id=new_appointment.patient_id,
+        appointment_id=new_appointment.id,
+        amount=500,
+        status="pending"
+    )
+    print("Bill created for:", new_appointment.patient_id)
+    db.add(bill)
+    db.commit()
+
+
     # Trigger orchestrator workflow safely
     try:
-        WorkflowOrchestrator.appointment_created(db, new_appointment)
+        WorkflowOrchestrator.appointment_created(new_appointment)
     except Exception as e:
         print("Orchestrator Error:", e)
 

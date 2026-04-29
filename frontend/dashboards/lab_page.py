@@ -1,26 +1,45 @@
 import streamlit as st
 import requests
 from api import get_appointments, BASE_URL
+from datetime import datetime
+from ui_config import ICON_MAP, render_header
 
 
 def lab_dashboard():
 
-    st.markdown('<div class="section-title">🧪 Lab Dashboard</div>', unsafe_allow_html=True)
+    render_header("Lab Dashboard", "lab")
 
     # ---------------------------
     # FETCH APPOINTMENTS
     # ---------------------------
     appointments = get_appointments().json()
 
+    def format_date(dt):
+        try:
+            return datetime.fromisoformat(dt).strftime("%d %b %Y • %I:%M %p")
+        except:
+            return dt
+
     appointment_map = {
-        f"ID {a['id']} | Patient {a['patient_id']} | {a['appointment_date']}": a['id']
+        f"Appt #{a['id']} • P{a['patient_id']} • {format_date(a['appointment_date'])}": a['id']
         for a in appointments
     }
 
     # ---------------------------
     # CREATE TEST SECTION
     # ---------------------------
-    st.markdown('<div class="section-title">➕ Create Lab Test</div>', unsafe_allow_html=True)
+    st.markdown(f"""
+        <div style="
+            font-size:20px;
+            font-weight:600;
+            margin-top:20px;
+            margin-bottom:10px;
+            color:#cbd5f5;
+        ">
+            <i class="bi bi-{ICON_MAP['add']}"></i> Create Lab Test
+        </div>
+        """, unsafe_allow_html=True)
+    
     
     with st.container():
 
@@ -35,10 +54,10 @@ def lab_dashboard():
 
         
 
-        st.info(f"👤 Patient ID: {patient_id}")
+        st.info(f"Patient ID: {patient_id}")
 
-        test_name = st.text_input("🧪 Test Name")
-        result = st.text_input("📊 Result")
+        test_name = st.text_input("Test Name")
+        result = st.text_input("Result")
 
 
     if st.button("Create Test"):

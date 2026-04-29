@@ -39,3 +39,10 @@ def pay_bill(bill_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Bill paid successfully"}
+
+@router.get("/patient/{patient_id}", response_model=list[BillingResponse])
+def get_patient_bills(patient_id: int, db: Session = Depends(get_db)):
+
+    bills = db.query(Billing).filter(Billing.patient_id == patient_id).all()
+
+    return bills

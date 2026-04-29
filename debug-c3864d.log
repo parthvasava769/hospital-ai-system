@@ -1,0 +1,13 @@
+{"sessionId": "c3864d", "runId": "pre-fix", "hypothesisId": "A", "location": "backend/app/routes/appointments.py:53", "message": "Creating Billing record", "data": {"patient_id": 2, "appointment_id": 40}, "timestamp": 1774457297983}
+{"sessionId": "c3864d", "runId": "pre-fix", "hypothesisId": "A", "location": "backend/app/main.py:46", "message": "Admin get_users invoked", "data": {"has_user_module": true}, "timestamp": 1774499165201}
+{"sessionId": "c3864d", "runId": "pre-fix", "hypothesisId": "A", "location": "backend/app/main.py:46", "message": "Admin get_users invoked", "data": {"has_user_module": true}, "timestamp": 1774499682840}
+{"sessionId": "c3864d", "runId": "pre-fix", "hypothesisId": "A", "location": "backend/app/main.py:46", "message": "Admin get_users invoked", "data": {"has_user_module": true}, "timestamp": 1774499887873}
+{"sessionId": "c3864d", "runId": "pre-fix", "hypothesisId": "A", "location": "backend/app/main.py:46", "message": "Admin get_users invoked", "data": {"has_user_module": true}, "timestamp": 1774499912815}
+{"sessionId": "c3864d", "runId": "pre-fix", "hypothesisId": "A", "location": "backend/app/main.py:46", "message": "Admin get_users invoked", "data": {"has_user_module": true}, "timestamp": 1774499912992}
+{"sessionId": "c3864d", "runId": "pre-fix", "hypothesisId": "A", "location": "backend/app/main.py:46", "message": "Admin get_users invoked", "data": {"has_user_module": true}, "timestamp": 1774499923404}
+{"sessionId": "c3864d", "runId": "pre-fix", "hypothesisId": "A", "location": "backend/app/main.py:46", "message": "Admin get_users invoked", "data": {"has_user_module": true}, "timestamp": 1774499923559}
+{"sessionId": "c3864d", "runId": "pre-fix", "hypothesisId": "A", "location": "backend/app/main.py:46", "message": "Admin get_users invoked", "data": {"has_user_module": true}, "timestamp": 1774499944969}
+{"sessionId": "c3864d", "runId": "pre-fix", "hypothesisId": "A", "location": "backend/app/routes/appointments.py:53", "message": "Creating Billing record", "data": {"patient_id": 2, "appointment_id": 42}, "timestamp": 1777437985516}
+{"sessionId": "c3864d", "runId": "pre-fix", "hypothesisId": "A", "location": "backend/app/main.py:46", "message": "Admin get_users invoked", "data": {"has_user_module": true}, "timestamp": 1777442314564}
+{"sessionId": "c3864d", "runId": "pre-fix", "hypothesisId": "A", "location": "backend/app/main.py:46", "message": "Admin get_users invoked", "data": {"has_user_module": true}, "timestamp": 1777464388777}
+{"sessionId": "c3864d", "runId": "pre-fix", "hypothesisId": "A", "location": "backend/app/main.py:46", "message": "Admin get_users invoked", "data": {"has_user_module": true}, "timestamp": 1777464397174}
